@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Song Requests</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f1724; color: #f3f4f6; margin: 0; padding: 20px; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5em; }
+    .song-list { display: flex; flex-direction: column; gap: 10px; }
+    .song { background: rgba(255,255,255,0.05); padding: 12px; border-radius: 8px; }
+    .meta { font-size: 0.8em; color: #9ca3af; }
+  </style>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, orderBy, query } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    // 🔧 Replace with your Firebase project config
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyBEfCB_ME8LT6R68M7uTJ1zZiIVK2f16ow",
+  authDomain: "dj-request-app-39795.firebaseapp.com",
+  projectId: "dj-request-app-39795",
+  storageBucket: "dj-request-app-39795.firebasestorage.app",
+  messagingSenderId: "195747107387",
+  appId: "1:195747107387:web:e472533af66f36e9c7021e",
+  measurementId: "G-76QLC2P730"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const list = document.getElementById("songList");
+
+    const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+      list.innerHTML = "";
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        const item = document.createElement("div");
+        item.className = "song";
+        item.innerHTML = `
+          <strong>${data.song}</strong><br>
+          <div class="meta">${data.name || "Anonymous"} • ${new Date(data.timestamp?.toDate()).toLocaleTimeString()}</div>
+        `;
+        list.appendChild(item);
+      });
+    });
+  </script>
+</head>
+<body>
+  <h1>🎶 Live Song Requests</h1>
+  <div id="songList" class="song-list">Loading requests...</div>
+</body>
+</html>

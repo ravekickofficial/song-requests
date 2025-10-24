@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Submit a Song Request</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0f1724; color: #f3f4f6; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+    form { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; }
+    input, button { padding: 10px; border-radius: 8px; border: none; font-size: 1em; }
+    input { background: rgba(255,255,255,0.1); color: #fff; }
+    button { background: #7c3aed; color: white; cursor: pointer; }
+    button:hover { background: #6d28d9; }
+  </style>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+    // 🔧 Same Firebase config as index.html
+const firebaseConfig = {
+  apiKey: "AIzaSyBEfCB_ME8LT6R68M7uTJ1zZiIVK2f16ow",
+  authDomain: "dj-request-app-39795.firebaseapp.com",
+  projectId: "dj-request-app-39795",
+  storageBucket: "dj-request-app-39795.firebasestorage.app",
+  messagingSenderId: "195747107387",
+  appId: "1:195747107387:web:e472533af66f36e9c7021e",
+  measurementId: "G-76QLC2P730"
+};
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const form = document.getElementById("songForm");
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const song = form.song.value.trim();
+      const name = form.name.value.trim();
+      if (!song) return alert("Please enter a song name!");
+
+      await addDoc(collection(db, "requests"), {
+        song,
+        name,
+        timestamp: serverTimestamp()
+      });
+
+      alert("✅ Request submitted!");
+      form.reset();
+    });
+  </script>
+</head>
+<body>
+  <form id="songForm">
+    <h2>🎵 Song Request</h2>
+    <input name="name" placeholder="Your name (optional)" />
+    <input name="song" placeholder="Song title" required />
+    <button type="submit">Send Request</button>
+  </form>
+</body>
+</html>
