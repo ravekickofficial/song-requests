@@ -5,46 +5,138 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Submit a Song Request</title>
   <style>
-    body { font-family: system-ui, sans-serif; background: #0f1724; color: #f3f4f6; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
-    form { background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; display: flex; flex-direction: column; gap: 12px; }
-    input, button { padding: 10px; border-radius: 8px; border: none; font-size: 1em; }
-    input { background: rgba(255,255,255,0.1); color: #fff; }
-    button { background: #7c3aed; color: white; cursor: pointer; }
-    button:hover { background: #6d28d9; }
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f1724;
+      color: #f3f4f6;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    form {
+      background: rgba(255,255,255,0.05);
+      padding: 20px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+    }
+    input, button {
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1em;
+    }
+    input {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    button {
+      background: #7c3aed;
+      color: white;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: gray;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background: #6d28d9;
+    }
+    #cooldown {
+      font-size: 0.9em;
+      color: #9ca3af;
+    }
   </style>
-  <!-- Firebase SDK -->
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-    // 🔧 Same Firebase config as index.html
-const firebaseConfig = {
-  apiKey: "AIzaSyBEfCB_ME8LT6R68M7uTJ1zZiIVK2f16ow",
-  authDomain: "dj-request-app-39795.firebaseapp.com",
-  projectId: "dj-request-app-39795",
-  storageBucket: "dj-request-app-39795.firebasestorage.app",
-  messagingSenderId: "195747107387",
-  appId: "1:195747107387:web:e472533af66f36e9c7021e",
-  measurementId: "G-76QLC2P730"
-};
+    // 🔧 Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBEfCB_ME8LT6R68M7uTJ1zZiIVK2f16ow",
+      authDomain: "dj-request-app-39795.firebaseapp.com",
+      projectId: "dj-request-app-39795",
+      storageBucket: "dj-request-app-39795.firebasestorage.app",
+      messagingSenderId: "195747107387",
+      appId: "1:195747107387:web:e472533af66f36e9c7021e",
+      measurementId: "G-76QLC2P730"
+    };
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
     const form = document.getElementById("songForm");
+    const button = form.querySelector("button");
+    const cooldownEl = document.getElementById("cooldown");
+
+    const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+    // Check cooldown when page loads
+    checkCooldown();
+
+    function checkCooldown() {
+      const lastTime = localStorage.getItem("lastRequestTime");
+      if (lastTime) {
+        const elapsed = Date.now() - parseInt(lastTime);
+        const remaining = COOLDOWN_MS - elapsed;
+        if (remaining > 0) {
+          startCooldown(remaining);
+        }
+      }
+    }
+
+    function startCooldown(duration) {
+      button.disabled = true;
+      updateCountdown(duration);
+
+      const interval = setInterval(() => {
+        duration -= 1000;
+        if (duration <= 0) {
+          clearInterval(interval);
+          cooldownEl.textContent = "";
+          button.disabled = false;
+        } else {
+          updateCountdown(duration);
+        }
+      }, 1000);
+    }
+
+    function updateCountdown(ms) {
+      const m = Math.floor(ms / 60000);
+      const s = Math.floor((ms % 60000) / 1000);
+      cooldownEl.textContent = `Please wait ${m}:${s.toString().padStart(2,"0")} before submitting another song.`;
+    }
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       const song = form.song.value.trim();
       const name = form.name.value.trim();
       if (!song) return alert("Please enter a song name!");
 
-      await addDoc(collection(db, "requests"), {
-        song,
-        name,
-        timestamp: serverTimestamp()
-      });
+      try {
+        await addDoc(collection(db, "requests"), {
+          song,
+          name,
+          timestamp: serverTimestamp()
+        });
 
-      alert("✅ Nummer verstuurd!");
-      form.reset();
+        alert("✅ Nummer verstuurd!");
+        form.reset();
+
+        // Save submission time
+        localStorage.setItem("lastRequestTime", Date.now());
+        startCooldown(COOLDOWN_MS);
+      } catch (err) {
+        console.error(err);
+        alert("Error submitting song. Please try again.");
+      }
     });
   </script>
 </head>
@@ -54,11 +146,7 @@ const firebaseConfig = {
     <input name="name" placeholder="Artiestennaam" />
     <input name="song" placeholder="Titel van het nummer" required />
     <button type="submit">Send Request</button>
+    <div id="cooldown"></div>
   </form>
 </body>
 </html>
-
-
-
-
-
